@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>˚₊‧꒰ა 미르의 메뉴판 ໒꒱ ‧₊˚</title>
+  <style>
+    :root {
+      --bg-color: #fcf8f2;
+      --card-bg: #ffffff;
+      --primary: #ffb7b2;
+      --primary-hover: #ff9aa2;
+      --secondary: #e2f0cb;
+      --accent: #b5ead7;
+      --text-main: #4a4a4a;
+      --border-color: #f1e4d3;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 25px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-secondary { background-color: var(--secondary); color: #555; }
+    .btn-accent { background-color: var(--accent); color: #555; }
+
+    .form-card {
+      background-color: #faf8f5;
+      border: 1px dashed var(--border-color);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+    }
+
+    .form-card h3 { margin-top: 0; font-size: 1.1rem; }
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    input, select {
+      padding: 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 6px;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    .menu-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 10px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .menu-item:last-child { border-bottom: none; }
+    .menu-title { font-weight: 600; }
+    .menu-price {
+      background-color: #fff0f0;
+      color: #e57373;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      width: 90%;
+      max-width: 450px;
+      max-height: 80vh;
+      border-radius: 16px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .history-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 0.9rem;
+    }
+
+    .tag-purchase { color: #2196F3; font-weight: bold; }
+    .tag-use { color: #F44336; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>˚₊‧꒰ა 미르의 메뉴판 ໒꒱ ‧₊˚</h1>
+
+    <div class="btn-group">
+      <button class="btn-primary" onclick="uploadInitialData()">🎁 기본 메뉴판 한번에 등록</button>
+      <button class="btn-secondary" onclick="toggleForm()">➕ 항목/기록 등록</button>
+      <button class="btn-accent" onclick="openHistory()">📜 히스토리 보기</button>
+    </div>
+
+    <div id="addFormCard" class="form-card" style="display: none;">
+      <h3>➕ 신규 메뉴 / 리액션 추가</h3>
+      <form id="menuForm">
+        <input type="text" id="menuTitle" placeholder="항목명 (예: 아잉)" required>
+        <input type="number" id="menuPrice" placeholder="수량 또는 가격" required>
+        <select id="menuCategory">
+          <option value="일반">일반 메뉴</option>
+          <option value="리액션">리액션 목록</option>
+        </select>
+        <button type="submit" class="btn-primary">메뉴 등록</button>
+      </form>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+      <h3>📝 사용 / 구매 내역 기록</h3>
+      <form id="historyForm">
+        <select id="historyType">
+          <option value="PURCHASE">구매 (적립)</option>
+          <option value="USE">사용</option>
+        </select>
+        <input type="text" id="historyItemName" placeholder="아이템명" required>
+        <input type="number" id="historyAmount" placeholder="수량" required>
+        <input type="text" id="historyUserName" placeholder="닉네임 (미입력 시 익명)">
+        <button type="submit" class="btn-secondary">기록 등록</button>
+      </form>
+    </div>
+
+    <div class="section-title">🥄 메뉴판</div>
+    <ul id="regularMenuList" class="menu-list"></ul>
+
+    <div class="section-title">✨ 킵해둔 리액션 목록</div>
+    <ul id="reactionList" class="menu-list"></ul>
+  </div>
+
+  <div id="historyModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="margin: 0;">📅 사용 및 구매 기록</h3>
+        <button onclick="closeHistory()">닫기</button>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- Firebase JavaScript SDK (v10 Modular via CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Base64로 난독화된 Firebase 키 정보
+    const _0x4a = {
+      k: "QUl6YVN5QlhockRTWGczeU1lSTAzV1JxczFWOFFrTDJhbUlwZ2Qw",
+      d: "bWVudS1jOGRjNi5maXJlYmFzZWFwcC5jb20=",
+      p: "bWVudS1jOGRjNg==",
+      b: "bWVudS1jOGRjNi5maXJlYmFzdG9yYWdlLmFwcA==",
+      m: "NTk2MzI0MDg5OTc5",
+      a: "MTo1OTYzMjQwODk5Nzk6d2ViOjMzYzcxMTBiODQ2ZmVjMzZhYTIyZGU="
+    };
+
+    // 난독화 해제 및 설정 적용
+    const firebaseConfig = {
+      apiKey: atob(_0x4a.k),
+      authDomain: atob(_0x4a.d),
+      projectId: atob(_0x4a.p),
+      storageBucket: atob(_0x4a.b),
+      messagingSenderId: atob(_0x4a.m),
+      appId: atob(_0x4a.a)
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const initialMenus = [
+      { title: "아잉", price: 1, category: "일반" },
+      { title: "힝구", price: 5, category: "일반" },
+      { title: "룰렛", price: 20, category: "일반" },
+      { title: "멍멍체 5분", price: 30, category: "일반" },
+      { title: "원하는 호칭 방종까지", price: 40, category: "일반" },
+      { title: "원하는 말 읽어주기", price: 50, category: "일반" },
+      { title: "팬보드", price: 100, category: "일반" },
+      { title: "리방", price: 300, category: "일반" },
+      { title: "커플프사", price: 500, category: "일반" }
+    ];
+
+    const regularMenuList = document.getElementById("regularMenuList");
+    const reactionList = document.getElementById("reactionList");
+    const historyList = document.getElementById("historyList");
+
+    onSnapshot(collection(db, "menus"), (snapshot) => {
+      regularMenuList.innerHTML = "";
+      reactionList.innerHTML = "";
+
+      snapshot.docs.forEach((doc) => {
+        const item = doc.data();
+        const li = document.createElement("li");
+        li.className = "menu-item";
+        
+        if (item.category === "리액션") {
+          li.innerHTML = `<span class="menu-title">✨ ${item.title}</span><span class="menu-price">${item.price}개</span>`;
+          reactionList.appendChild(li);
+        } else {
+          li.innerHTML = `<span class="menu-title">🥄 ${item.title}</span><span class="menu-price">${item.price}개</span>`;
+          regularMenuList.appendChild(li);
+        }
+      });
+    });
+
+    const historyQuery = query(collection(db, "histories"), orderBy("createdAt", "desc"));
+    onSnapshot(historyQuery, (snapshot) => {
+      historyList.innerHTML = "";
+      snapshot.docs.forEach((doc) => {
+        const h = doc.data();
+        const div = document.createElement("div");
+        div.className = "history-item";
+
+        const typeTag = h.type === "PURCHASE" 
+          ? `<span class="tag-purchase">[구매]</span>` 
+          : `<span class="tag-use">[사용]</span>`;
+        
+        const dateStr = h.createdAt?.toDate ? h.createdAt.toDate().toLocaleString("ko-KR") : "방금 전";
+
+        div.innerHTML = `
+          <div>${typeTag} <strong>${h.itemName}</strong> (${h.amount}개) - ${h.userName || '익명'}</div>
+          <small style="color: #999;">${dateStr}</small>
+        `;
+        historyList.appendChild(div);
+      });
+    });
+
+    window.uploadInitialData = async () => {
+      if (!confirm("기본 메뉴 9개를 DB에 추가하시겠습니까?")) return;
+      for (const item of initialMenus) {
+        await addDoc(collection(db, "menus"), {
+          ...item,
+          createdAt: serverTimestamp()
+        });
+      }
+      alert("등록이 완료되었습니다.");
+    };
+
+    document.getElementById("menuForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("menuTitle").value;
+      const price = Number(document.getElementById("menuPrice").value);
+      const category = document.getElementById("menuCategory").value;
+
+      await addDoc(collection(db, "menus"), {
+        title, price, category, createdAt: serverTimestamp()
+      });
+
+      e.target.reset();
+      alert("새 메뉴가 등록되었습니다.");
+    });
+
+    document.getElementById("historyForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const type = document.getElementById("historyType").value;
+      const itemName = document.getElementById("historyItemName").value;
+      const amount = Number(document.getElementById("historyAmount").value);
+      const userName = document.getElementById("historyUserName").value || "익명";
+
+      await addDoc(collection(db, "histories"), {
+        type, itemName, amount, userName, createdAt: serverTimestamp()
+      });
+
+      e.target.reset();
+      alert("기록이 등록되었습니다.");
+    });
+
+    window.toggleForm = () => {
+      const form = document.getElementById("addFormCard");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    };
+
+    window.openHistory = () => {
+      document.getElementById("historyModal").style.display = "flex";
+    };
+
+    window.closeHistory = () => {
+      document.getElementById("historyModal").style.display = "none";
+    };
+  </script>
+</body>
+</html>
