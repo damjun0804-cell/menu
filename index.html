@@ -134,7 +134,6 @@
       font-weight: bold;
     }
 
-    /* 닉네임 동그란 배경 UI 스타일 추가 */
     .user-badge {
       background-color: #e8f4fd;
       color: #1976d2;
@@ -142,6 +141,13 @@
       border-radius: 12px;
       font-size: 0.8rem;
       font-weight: bold;
+    }
+
+    .section-notice {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 10px;
+      text-align: right;
     }
 
     .modal-overlay {
@@ -229,6 +235,10 @@
     <div class="section-title">🥄 메뉴판</div>
     <ul id="regularMenuList" class="menu-list"></ul>
 
+    <!-- 룰렛 항목 영역 -->
+    <div class="section-title">🎰 룰렛 항목</div>
+    <ul id="rouletteMenuList" class="menu-list"></ul>
+
     <!-- 킵해둔 리액션 영역 -->
     <div class="section-title">✨ 킵 목록</div>
     <ul id="reactionList" class="menu-list"></ul>
@@ -285,7 +295,19 @@
       { title: "커플프사", price: 500 }
     ];
 
+    const rouletteMenuListData = [
+      "미르 금푼 시키기",
+      "일주일 닉변 시키기",
+      "하루 닉변 시키기",
+      "소원권",
+      "프변 시키기",
+      "방제변경",
+      "역닉변 당하기",
+      "멍멍체 10분"
+    ];
+
     const regularMenuList = document.getElementById("regularMenuList");
+    const rouletteMenuList = document.getElementById("rouletteMenuList");
     const reactionList = document.getElementById("reactionList");
     const historyList = document.getElementById("historyList");
     const purchaseItemSelect = document.getElementById("purchaseItemSelect");
@@ -293,8 +315,14 @@
 
     let keepBalances = {};
 
-    function renderFixedMenu() {
+    function renderMenuList() {
       regularMenuList.innerHTML = "";
+      rouletteMenuList.innerHTML = "";
+      purchaseItemSelect.innerHTML = `<option value="" disabled selected>메뉴 선택</option>`;
+
+      // 메뉴판 출력
+      const regularGroup = document.createElement("optgroup");
+      regularGroup.label = "🥄 일반 메뉴";
       fixedMenuList.forEach((item) => {
         const li = document.createElement("li");
         li.className = "menu-item";
@@ -304,11 +332,28 @@
         const option = document.createElement("option");
         option.value = item.title;
         option.textContent = `${item.title} (${item.price}개)`;
-        purchaseItemSelect.appendChild(option);
+        regularGroup.appendChild(option);
       });
+      purchaseItemSelect.appendChild(regularGroup);
+
+      // 룰렛 항목 출력
+      const rouletteGroup = document.createElement("optgroup");
+      rouletteGroup.label = "🎰 룰렛 항목";
+      rouletteMenuListData.forEach((title) => {
+        const li = document.createElement("li");
+        li.className = "menu-item";
+        li.innerHTML = `<span class="menu-title">🎰 ${title}</span>`;
+        rouletteMenuList.appendChild(li);
+
+        const option = document.createElement("option");
+        option.value = title;
+        option.textContent = title;
+        rouletteGroup.appendChild(option);
+      });
+      purchaseItemSelect.appendChild(rouletteGroup);
     }
 
-    renderFixedMenu();
+    renderMenuList();
 
     const historyQuery = query(collection(db, "histories"), orderBy("createdAt", "desc"));
     onSnapshot(historyQuery, (snapshot) => {
@@ -354,19 +399,16 @@
       
       let hasReactions = false;
 
-      // 닉네임별 개별 항목 킵 목록 구성
       for (const key in keepBalances) {
         const data = keepBalances[key];
         if (data.amount > 0) {
           hasReactions = true;
 
-          // 사용 폼 드롭다운 옵션 생성
           const opt = document.createElement("option");
           opt.value = key;
           opt.textContent = `[${data.userName}] ${data.itemName} (남은 수량: ${data.amount}개)`;
           useKeepSelect.appendChild(opt);
 
-          // 킵 목록 UI 생성 (동그란 닉네임 뱃지 적용)
           const li = document.createElement("li");
           li.className = "menu-item";
           li.innerHTML = `
