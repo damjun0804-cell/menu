@@ -124,13 +124,23 @@
     }
 
     .menu-item:last-child { border-bottom: none; }
-    .menu-title { font-weight: 600; }
+    .menu-title { font-weight: 600; display: flex; align-items: center; gap: 8px; }
     .menu-price {
       background-color: #fff0f0;
       color: #e57373;
       padding: 4px 10px;
       border-radius: 15px;
       font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    /* 닉네임 동그란 배경 UI 스타일 추가 */
+    .user-badge {
+      background-color: #e8f4fd;
+      color: #1976d2;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
       font-weight: bold;
     }
 
@@ -204,7 +214,7 @@
         <button type="submit" class="btn-submit-purchase">적립하기</button>
       </form>
 
-      <!-- 2. 사용 폼 (닉네임 입력창 제거, 버튼명 및 색상 변경) -->
+      <!-- 2. 사용 폼 -->
       <form id="useForm" style="display: none;">
         <select id="useKeepSelect" required>
           <option value="" disabled selected>보유 중인 킵 항목 선택</option>
@@ -342,31 +352,30 @@
       reactionList.innerHTML = "";
       useKeepSelect.innerHTML = `<option value="" disabled selected>보유 중인 킵 항목 선택</option>`;
       
-      const aggregateSummary = {};
       let hasReactions = false;
 
+      // 닉네임별 개별 항목 킵 목록 구성
       for (const key in keepBalances) {
         const data = keepBalances[key];
         if (data.amount > 0) {
           hasReactions = true;
 
-          if (!aggregateSummary[data.itemName]) {
-            aggregateSummary[data.itemName] = 0;
-          }
-          aggregateSummary[data.itemName] += data.amount;
-
+          // 사용 폼 드롭다운 옵션 생성
           const opt = document.createElement("option");
           opt.value = key;
           opt.textContent = `[${data.userName}] ${data.itemName} (남은 수량: ${data.amount}개)`;
           useKeepSelect.appendChild(opt);
-        }
-      }
 
-      for (const [itemName, totalCount] of Object.entries(aggregateSummary)) {
-        if (totalCount > 0) {
+          // 킵 목록 UI 생성 (동그란 닉네임 뱃지 적용)
           const li = document.createElement("li");
           li.className = "menu-item";
-          li.innerHTML = `<span class="menu-title">${itemName}</span><span class="menu-price">${totalCount}개</span>`;
+          li.innerHTML = `
+            <span class="menu-title">
+              <span class="user-badge">${data.userName}</span>
+              ${data.itemName}
+            </span>
+            <span class="menu-price">${data.amount}개</span>
+          `;
           reactionList.appendChild(li);
         }
       }
