@@ -173,24 +173,39 @@
       <button class="btn-accent" onclick="openHistory()">📜 히스토리 보기</button>
     </div>
 
-    <!-- 킵 추가 / 사용 기록 등록 폼 -->
+    <!-- 킵 추가 / 사용 등록 폼 -->
     <div id="addFormCard" class="form-card" style="display: none;">
-      <h3>📝 킵 리액션 추가 및 사용 기록</h3>
-      <form id="historyForm">
-        <select id="historyType">
-          <option value="PURCHASE">적립</option>
-          <option value="USE">사용</option>
+      <h3>📝 킵 등록 및 사용 인증</h3>
+      
+      <select id="actionType" onchange="switchFormType()">
+        <option value="PURCHASE">적립하기</option>
+        <option value="USE">사용하기 (비밀번호 인증)</option>
+      </select>
+
+      <hr style="border:0; border-top: 1px dashed #ddd; margin: 10px 0;">
+
+      <!-- 1. 적립 폼 -->
+      <form id="purchaseForm">
+        <select id="purchaseItemSelect" required>
+          <option value="" disabled selected>적립할 아이템 선택</option>
         </select>
-        
-        <!-- 아이템 선택 드롭다운 -->
-        <select id="historyItemSelect" required>
-          <option value="" disabled selected>아이템을 선택하세요</option>
+        <input type="number" id="purchaseAmount" placeholder="수량 (개수)" min="1" required>
+        <input type="text" id="purchaseUserName" placeholder="닉네임 (필수)" required>
+        <!-- 필수 지정: 숫자 4~8자리만 허용 -->
+        <input type="password" id="purchasePassword" placeholder="비밀번호 (숫자 4~8자리)" inputmode="numeric" pattern="^[0-9]{4,8}$" maxlength="8" title="숫자 4자리에서 8자리까지 입력해야 합니다." required>
+        <button type="submit" class="btn-secondary">적립 등록</button>
+      </form>
+
+      <!-- 2. 사용 폼 -->
+      <form id="useForm" style="display: none;">
+        <select id="useKeepSelect" required>
+          <option value="" disabled selected>보유 중인 킵 항목 선택</option>
         </select>
-        
-        <input type="number" id="historyAmount" placeholder="수량 (개수)" required>
-        <!-- 닉네임 필수 입력으로 변경 -->
-        <input type="text" id="historyUserName" placeholder="닉네임 (필수)" required>
-        <button type="submit" class="btn-secondary">기록 등록</button>
+        <input type="number" id="useAmount" placeholder="사용할 수량" min="1" required>
+        <input type="text" id="useUserName" placeholder="적립 시 입력한 닉네임" required>
+        <!-- 필수 지정: 숫자 4~8자리만 허용 -->
+        <input type="password" id="usePassword" placeholder="비밀번호 (숫자 4~8자리)" inputmode="numeric" pattern="^[0-9]{4,8}$" maxlength="8" title="숫자 4자리에서 8자리까지 입력해야 합니다." required>
+        <button type="submit" class="btn-secondary" style="background-color: #ffb7b2; color:white;">사용 승인</button>
       </form>
     </div>
 
@@ -207,24 +222,23 @@
   <div id="historyModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 style="margin: 0;">📅 사용 및 구매 기록</h3>
+        <h3 style="margin: 0;">📅 사용 및 적립 기록</h3>
         <button onclick="closeHistory()">닫기</button>
       </div>
       <div id="historyList"></div>
     </div>
   </div>
 
-  <!-- Firebase JavaScript SDK (v10 Modular via CDN) -->
+  <!-- Firebase JavaScript SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
       getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Base64로 난독화된 Firebase 키 정보
     const _0x4a = {
       k: "QUl6YVN5QlhockRTWGczeU1lSTAzV1JxczFWOFFrTDJhbUlwZ2Qw",
-      d: "bWVudS1jOGRjNi5maXJlYmFzZWFwcC5jb20=",
+      d: "bWVudS1jOGRjNi5maXJlYmFzdG9yYWdlLmFwcA==",
       p: "bWVudS1jOGRjNg==",
       b: "bWVudS1jOGRjNi5maXJlYmFzdG9yYWdlLmFwcA==",
       m: "NTk2MzI0MDg5OTc5",
@@ -243,7 +257,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 고정 메뉴판 데이터 목록
     const fixedMenuList = [
       { title: "아잉", price: 1 },
       { title: "힝구", price: 5 },
@@ -259,47 +272,55 @@
     const regularMenuList = document.getElementById("regularMenuList");
     const reactionList = document.getElementById("reactionList");
     const historyList = document.getElementById("historyList");
-    const historyItemSelect = document.getElementById("historyItemSelect");
+    const purchaseItemSelect = document.getElementById("purchaseItemSelect");
+    const useKeepSelect = document.getElementById("useKeepSelect");
 
-    // 1. 고정 메뉴판 출력 및 셀렉트 박스 옵션 생성 함수
+    let keepBalances = {};
+
+    // 1. 고정 메뉴판 및 셀렉트 박스 데이터 로드
     function renderFixedMenu() {
       regularMenuList.innerHTML = "";
       fixedMenuList.forEach((item) => {
-        // 메뉴판 출력
         const li = document.createElement("li");
         li.className = "menu-item";
         li.innerHTML = `<span class="menu-title">🥄 ${item.title}</span><span class="menu-price">${item.price}개</span>`;
         regularMenuList.appendChild(li);
 
-        // 드롭다운 셀렉트 박스 옵션 추가
         const option = document.createElement("option");
         option.value = item.title;
         option.textContent = `${item.title} (${item.price}개)`;
-        historyItemSelect.appendChild(option);
+        purchaseItemSelect.appendChild(option);
       });
     }
 
     renderFixedMenu();
 
-    // 2. Firestore 실시간 킵해둔 리액션 목록 계산 및 동기화
+    // 2. Firestore 실시간 킵 계산 및 동기화
     const historyQuery = query(collection(db, "histories"), orderBy("createdAt", "desc"));
     onSnapshot(historyQuery, (snapshot) => {
       historyList.innerHTML = "";
-      const reactionBalances = {};
+      keepBalances = {};
 
       snapshot.docs.forEach((doc) => {
         const h = doc.data();
-        
-        if (!reactionBalances[h.itemName]) {
-          reactionBalances[h.itemName] = 0;
-        }
-        if (h.type === "PURCHASE") {
-          reactionBalances[h.itemName] += h.amount;
-        } else if (h.type === "USE") {
-          reactionBalances[h.itemName] -= h.amount;
+        const key = `${h.userName}_${h.itemName}`;
+
+        if (!keepBalances[key]) {
+          keepBalances[key] = {
+            userName: h.userName,
+            itemName: h.itemName,
+            amount: 0,
+            password: h.password
+          };
         }
 
-        // 히스토리 모달 목록 랜더링
+        if (h.type === "PURCHASE") {
+          keepBalances[key].amount += h.amount;
+          if (h.password) keepBalances[key].password = h.password;
+        } else if (h.type === "USE") {
+          keepBalances[key].amount -= h.amount;
+        }
+
         const div = document.createElement("div");
         div.className = "history-item";
         const typeTag = h.type === "PURCHASE" 
@@ -314,16 +335,34 @@
         historyList.appendChild(div);
       });
 
-      // 계산된 킵 리액션 목록 화면 출력
       reactionList.innerHTML = "";
-      let hasReactions = false;
+      useKeepSelect.innerHTML = `<option value="" disabled selected>보유 중인 킵 항목 선택</option>`;
       
-      for (const [title, count] of Object.entries(reactionBalances)) {
-        if (count > 0) {
+      const aggregateSummary = {};
+      let hasReactions = false;
+
+      for (const key in keepBalances) {
+        const data = keepBalances[key];
+        if (data.amount > 0) {
           hasReactions = true;
+
+          if (!aggregateSummary[data.itemName]) {
+            aggregateSummary[data.itemName] = 0;
+          }
+          aggregateSummary[data.itemName] += data.amount;
+
+          const opt = document.createElement("option");
+          opt.value = key;
+          opt.textContent = `[${data.userName}] ${data.itemName} (남은 수량: ${data.amount}개)`;
+          useKeepSelect.appendChild(opt);
+        }
+      }
+
+      for (const [itemName, totalCount] of Object.entries(aggregateSummary)) {
+        if (totalCount > 0) {
           const li = document.createElement("li");
           li.className = "menu-item";
-          li.innerHTML = `<span class="menu-title">✨ ${title}</span><span class="menu-price">${count}개 킵됨</span>`;
+          li.innerHTML = `<span class="menu-title">✨ ${itemName}</span><span class="menu-price">${totalCount}개 킵됨</span>`;
           reactionList.appendChild(li);
         }
       }
@@ -333,28 +372,98 @@
       }
     });
 
-    // 3. 킵/사용 내역 등록 폼 제출
-    document.getElementById("historyForm").addEventListener("submit", async (e) => {
+    // 비밀번호 정규식 검사 함수 (숫자 4~8자리)
+    const isValidPassword = (pwd) => /^[0-9]{4,8}$/.test(pwd);
+
+    // 3. 적립 처리
+    document.getElementById("purchaseForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const type = document.getElementById("historyType").value;
-      const itemName = historyItemSelect.value;
-      const amount = Number(document.getElementById("historyAmount").value);
-      const userName = document.getElementById("historyUserName").value.trim();
+      const itemName = purchaseItemSelect.value;
+      const amount = Number(document.getElementById("purchaseAmount").value);
+      const userName = document.getElementById("purchaseUserName").value.trim();
+      const password = document.getElementById("purchasePassword").value.trim();
 
       if (!itemName) {
         alert("아이템을 선택해 주세요.");
         return;
       }
 
+      if (!isValidPassword(password)) {
+        alert("비밀번호는 반드시 숫자 4자리에서 8자리로 설정해야 합니다.");
+        return;
+      }
+
       await addDoc(collection(db, "histories"), {
-        type, itemName, amount, userName, createdAt: serverTimestamp()
+        type: "PURCHASE",
+        itemName,
+        amount,
+        userName,
+        password,
+        createdAt: serverTimestamp()
       });
 
       e.target.reset();
-      alert("내역이 등록되었습니다.");
+      alert("적립이 완료되었습니다.");
     });
 
-    // 버튼 핸들러
+    // 4. 사용 및 비밀번호 검증 처리
+    document.getElementById("useForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const selectedKey = useKeepSelect.value;
+      const amount = Number(document.getElementById("useAmount").value);
+      const userName = document.getElementById("useUserName").value.trim();
+      const password = document.getElementById("usePassword").value.trim();
+
+      if (!selectedKey || !keepBalances[selectedKey]) {
+        alert("올바른 킵 항목을 선택해 주세요.");
+        return;
+      }
+
+      if (!isValidPassword(password)) {
+        alert("비밀번호는 숫자 4자리에서 8자리 형식이어야 합니다.");
+        return;
+      }
+
+      const targetKeep = keepBalances[selectedKey];
+
+      if (targetKeep.userName !== userName) {
+        alert("닉네임이 일치하지 않습니다.");
+        return;
+      }
+
+      if (targetKeep.password !== password) {
+        alert("비밀번호가 일치하지 않습니다.");
+        return;
+      }
+
+      if (amount > targetKeep.amount) {
+        alert(`보유 수량(${targetKeep.amount}개)을 초과하여 사용할 수 없습니다.`);
+        return;
+      }
+
+      await addDoc(collection(db, "histories"), {
+        type: "USE",
+        itemName: targetKeep.itemName,
+        amount,
+        userName: targetKeep.userName,
+        createdAt: serverTimestamp()
+      });
+
+      e.target.reset();
+      alert("사용이 승인되었습니다.");
+    });
+
+    window.switchFormType = () => {
+      const type = document.getElementById("actionType").value;
+      if (type === "PURCHASE") {
+        document.getElementById("purchaseForm").style.display = "flex";
+        document.getElementById("useForm").style.display = "none";
+      } else {
+        document.getElementById("purchaseForm").style.display = "none";
+        document.getElementById("useForm").style.display = "flex";
+      }
+    };
+
     window.toggleForm = () => {
       const form = document.getElementById("addFormCard");
       form.style.display = form.style.display === "none" ? "block" : "none";
