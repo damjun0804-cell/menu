@@ -65,19 +65,11 @@
     .btn-secondary { background-color: var(--secondary); color: #444; }
     .btn-accent { background-color: var(--accent); color: #444; }
 
-    .btn-submit-purchase {
-      background-color: var(--primary-dark);
-      color: #ffffff;
-    }
-    .btn-submit-purchase:hover {
-      background-color: #e0555e;
-    }
-
-    .btn-submit-use {
+    .btn-submit-purchase, .btn-submit-use {
       background-color: var(--use-btn);
       color: #ffffff;
     }
-    .btn-submit-use:hover {
+    .btn-submit-purchase:hover, .btn-submit-use:hover {
       background-color: #bf4300;
     }
 
@@ -209,7 +201,7 @@
         <input type="number" id="purchaseAmount" placeholder="수량 (개수)" min="1" required>
         <input type="text" id="purchaseUserName" placeholder="닉네임 (필수)" required>
         <input type="password" id="purchasePassword" placeholder="비밀번호 (숫자 4~8자리)" inputmode="numeric" pattern="^[0-9]{4,8}$" maxlength="8" title="숫자 4자리에서 8자리까지 입력해야 합니다." required>
-        <button type="submit" class="btn-submit-purchase">적립 등록</button>
+        <button type="submit" class="btn-submit-purchase">적립하기</button>
       </form>
 
       <!-- 2. 사용 폼 (닉네임 입력창 제거, 버튼명 및 색상 변경) -->
@@ -228,7 +220,7 @@
     <ul id="regularMenuList" class="menu-list"></ul>
 
     <!-- 킵해둔 리액션 영역 -->
-    <div class="section-title">✨ 킵해둔 리액션 목록</div>
+    <div class="section-title">✨ 킵 목록</div>
     <ul id="reactionList" class="menu-list"></ul>
   </div>
 
@@ -374,7 +366,7 @@
         if (totalCount > 0) {
           const li = document.createElement("li");
           li.className = "menu-item";
-          li.innerHTML = `<span class="menu-title">✨ ${itemName}</span><span class="menu-price">${totalCount}개 킵됨</span>`;
+          li.innerHTML = `<span class="menu-title">${itemName}</span><span class="menu-price">${totalCount}개</span>`;
           reactionList.appendChild(li);
         }
       }
