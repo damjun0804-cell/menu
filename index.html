@@ -45,7 +45,7 @@
 
     .btn-group {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 25px;
       justify-content: center;
       flex-wrap: wrap;
@@ -53,23 +53,21 @@
 
     button {
       border: none;
-      padding: 10px 16px;
+      padding: 10px 18px;
       border-radius: 12px;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
 
-    .btn-primary { background-color: var(--primary); color: white; }
-    .btn-primary:hover { background-color: var(--primary-hover); }
-    .btn-secondary { background-color: var(--secondary); color: #555; }
-    .btn-accent { background-color: var(--accent); color: #555; }
+    .btn-secondary { background-color: var(--secondary); color: #444; }
+    .btn-accent { background-color: var(--accent); color: #444; }
 
     .form-card {
       background-color: #faf8f5;
       border: 1px dashed var(--border-color);
-      padding: 15px;
+      padding: 18px;
       border-radius: 12px;
       margin-bottom: 25px;
     }
@@ -80,7 +78,6 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-bottom: 15px;
     }
 
     input, select {
@@ -170,46 +167,43 @@
   <div class="container">
     <h1>˚₊‧꒰ა 미르의 메뉴판 ໒꒱ ‧₊˚</h1>
 
+    <!-- 컨트롤 버튼 -->
     <div class="btn-group">
-      <button class="btn-primary" onclick="uploadInitialData()">🎁 기본 메뉴판 한번에 등록</button>
-      <button class="btn-secondary" onclick="toggleForm()">➕ 항목/기록 등록</button>
+      <button class="btn-secondary" onclick="toggleForm()">➕ 킵 추가 / 사용 등록</button>
       <button class="btn-accent" onclick="openHistory()">📜 히스토리 보기</button>
     </div>
 
+    <!-- 킵 추가 / 사용 기록 등록 폼 -->
     <div id="addFormCard" class="form-card" style="display: none;">
-      <h3>➕ 신규 메뉴 / 리액션 추가</h3>
-      <form id="menuForm">
-        <input type="text" id="menuTitle" placeholder="항목명 (예: 아잉)" required>
-        <input type="number" id="menuPrice" placeholder="수량 또는 가격" required>
-        <select id="menuCategory">
-          <option value="일반">일반 메뉴</option>
-          <option value="리액션">리액션 목록</option>
-        </select>
-        <button type="submit" class="btn-primary">메뉴 등록</button>
-      </form>
-
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-
-      <h3>📝 사용 / 구매 내역 기록</h3>
+      <h3>📝 킵 리액션 추가 및 사용 기록</h3>
       <form id="historyForm">
         <select id="historyType">
-          <option value="PURCHASE">구매 (적립)</option>
+          <option value="PURCHASE">적립</option>
           <option value="USE">사용</option>
         </select>
-        <input type="text" id="historyItemName" placeholder="아이템명" required>
-        <input type="number" id="historyAmount" placeholder="수량" required>
-        <input type="text" id="historyUserName" placeholder="닉네임 (미입력 시 익명)">
+        
+        <!-- 아이템 선택 드롭다운 -->
+        <select id="historyItemSelect" required>
+          <option value="" disabled selected>아이템을 선택하세요</option>
+        </select>
+        
+        <input type="number" id="historyAmount" placeholder="수량 (개수)" required>
+        <!-- 닉네임 필수 입력으로 변경 -->
+        <input type="text" id="historyUserName" placeholder="닉네임 (필수)" required>
         <button type="submit" class="btn-secondary">기록 등록</button>
       </form>
     </div>
 
+    <!-- 고정 메뉴판 영역 -->
     <div class="section-title">🥄 메뉴판</div>
     <ul id="regularMenuList" class="menu-list"></ul>
 
+    <!-- 킵해둔 리액션 영역 -->
     <div class="section-title">✨ 킵해둔 리액션 목록</div>
     <ul id="reactionList" class="menu-list"></ul>
   </div>
 
+  <!-- 히스토리 모달 -->
   <div id="historyModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -237,7 +231,6 @@
       a: "MTo1OTYzMjQwODk5Nzk6d2ViOjMzYzcxMTBiODQ2ZmVjMzZhYTIyZGU="
     };
 
-    // 난독화 해제 및 설정 적용
     const firebaseConfig = {
       apiKey: atob(_0x4a.k),
       authDomain: atob(_0x4a.d),
@@ -250,103 +243,118 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const initialMenus = [
-      { title: "아잉", price: 1, category: "일반" },
-      { title: "힝구", price: 5, category: "일반" },
-      { title: "룰렛", price: 20, category: "일반" },
-      { title: "멍멍체 5분", price: 30, category: "일반" },
-      { title: "원하는 호칭 방종까지", price: 40, category: "일반" },
-      { title: "원하는 말 읽어주기", price: 50, category: "일반" },
-      { title: "팬보드", price: 100, category: "일반" },
-      { title: "리방", price: 300, category: "일반" },
-      { title: "커플프사", price: 500, category: "일반" }
+    // 고정 메뉴판 데이터 목록
+    const fixedMenuList = [
+      { title: "아잉", price: 1 },
+      { title: "힝구", price: 5 },
+      { title: "룰렛", price: 20 },
+      { title: "멍멍체 5분", price: 30 },
+      { title: "원하는 호칭 방종까지", price: 40 },
+      { title: "원하는 말 읽어주기", price: 50 },
+      { title: "팬보드", price: 100 },
+      { title: "리방", price: 300 },
+      { title: "커플프사", price: 500 }
     ];
 
     const regularMenuList = document.getElementById("regularMenuList");
     const reactionList = document.getElementById("reactionList");
     const historyList = document.getElementById("historyList");
+    const historyItemSelect = document.getElementById("historyItemSelect");
 
-    onSnapshot(collection(db, "menus"), (snapshot) => {
+    // 1. 고정 메뉴판 출력 및 셀렉트 박스 옵션 생성 함수
+    function renderFixedMenu() {
       regularMenuList.innerHTML = "";
-      reactionList.innerHTML = "";
-
-      snapshot.docs.forEach((doc) => {
-        const item = doc.data();
+      fixedMenuList.forEach((item) => {
+        // 메뉴판 출력
         const li = document.createElement("li");
         li.className = "menu-item";
-        
-        if (item.category === "리액션") {
-          li.innerHTML = `<span class="menu-title">✨ ${item.title}</span><span class="menu-price">${item.price}개</span>`;
-          reactionList.appendChild(li);
-        } else {
-          li.innerHTML = `<span class="menu-title">🥄 ${item.title}</span><span class="menu-price">${item.price}개</span>`;
-          regularMenuList.appendChild(li);
-        }
-      });
-    });
+        li.innerHTML = `<span class="menu-title">🥄 ${item.title}</span><span class="menu-price">${item.price}개</span>`;
+        regularMenuList.appendChild(li);
 
+        // 드롭다운 셀렉트 박스 옵션 추가
+        const option = document.createElement("option");
+        option.value = item.title;
+        option.textContent = `${item.title} (${item.price}개)`;
+        historyItemSelect.appendChild(option);
+      });
+    }
+
+    renderFixedMenu();
+
+    // 2. Firestore 실시간 킵해둔 리액션 목록 계산 및 동기화
     const historyQuery = query(collection(db, "histories"), orderBy("createdAt", "desc"));
     onSnapshot(historyQuery, (snapshot) => {
       historyList.innerHTML = "";
+      const reactionBalances = {};
+
       snapshot.docs.forEach((doc) => {
         const h = doc.data();
+        
+        if (!reactionBalances[h.itemName]) {
+          reactionBalances[h.itemName] = 0;
+        }
+        if (h.type === "PURCHASE") {
+          reactionBalances[h.itemName] += h.amount;
+        } else if (h.type === "USE") {
+          reactionBalances[h.itemName] -= h.amount;
+        }
+
+        // 히스토리 모달 목록 랜더링
         const div = document.createElement("div");
         div.className = "history-item";
-
         const typeTag = h.type === "PURCHASE" 
-          ? `<span class="tag-purchase">[구매]</span>` 
+          ? `<span class="tag-purchase">[적립]</span>` 
           : `<span class="tag-use">[사용]</span>`;
-        
         const dateStr = h.createdAt?.toDate ? h.createdAt.toDate().toLocaleString("ko-KR") : "방금 전";
 
         div.innerHTML = `
-          <div>${typeTag} <strong>${h.itemName}</strong> (${h.amount}개) - ${h.userName || '익명'}</div>
+          <div>${typeTag} <strong>${h.itemName}</strong> (${h.amount}개) - ${h.userName}</div>
           <small style="color: #999;">${dateStr}</small>
         `;
         historyList.appendChild(div);
       });
-    });
 
-    window.uploadInitialData = async () => {
-      if (!confirm("기본 메뉴 9개를 DB에 추가하시겠습니까?")) return;
-      for (const item of initialMenus) {
-        await addDoc(collection(db, "menus"), {
-          ...item,
-          createdAt: serverTimestamp()
-        });
+      // 계산된 킵 리액션 목록 화면 출력
+      reactionList.innerHTML = "";
+      let hasReactions = false;
+      
+      for (const [title, count] of Object.entries(reactionBalances)) {
+        if (count > 0) {
+          hasReactions = true;
+          const li = document.createElement("li");
+          li.className = "menu-item";
+          li.innerHTML = `<span class="menu-title">✨ ${title}</span><span class="menu-price">${count}개 킵됨</span>`;
+          reactionList.appendChild(li);
+        }
       }
-      alert("등록이 완료되었습니다.");
-    };
 
-    document.getElementById("menuForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const title = document.getElementById("menuTitle").value;
-      const price = Number(document.getElementById("menuPrice").value);
-      const category = document.getElementById("menuCategory").value;
-
-      await addDoc(collection(db, "menus"), {
-        title, price, category, createdAt: serverTimestamp()
-      });
-
-      e.target.reset();
-      alert("새 메뉴가 등록되었습니다.");
+      if (!hasReactions) {
+        reactionList.innerHTML = `<li class="menu-item" style="color:#999; justify-content:center;">현재 킵해둔 리액션이 없습니다.</li>`;
+      }
     });
 
+    // 3. 킵/사용 내역 등록 폼 제출
     document.getElementById("historyForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const type = document.getElementById("historyType").value;
-      const itemName = document.getElementById("historyItemName").value;
+      const itemName = historyItemSelect.value;
       const amount = Number(document.getElementById("historyAmount").value);
-      const userName = document.getElementById("historyUserName").value || "익명";
+      const userName = document.getElementById("historyUserName").value.trim();
+
+      if (!itemName) {
+        alert("아이템을 선택해 주세요.");
+        return;
+      }
 
       await addDoc(collection(db, "histories"), {
         type, itemName, amount, userName, createdAt: serverTimestamp()
       });
 
       e.target.reset();
-      alert("기록이 등록되었습니다.");
+      alert("내역이 등록되었습니다.");
     });
 
+    // 버튼 핸들러
     window.toggleForm = () => {
       const form = document.getElementById("addFormCard");
       form.style.display = form.style.display === "none" ? "block" : "none";
